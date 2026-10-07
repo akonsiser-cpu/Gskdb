@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>تطبيق حساب الكميات الإنشائية</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#1e3a8a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="حساب الكميات">
+    
+    <!-- Web Manifest embedded as Data URI -->
+    <link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22%D8%AA%D8%B7%D8%A8%D9%8A%D9%82%20%D8%AD%D8%B3%D8%A7%D8%A8%20%D8%A7%D9%84%D9%83%D9%85%D9%8A%D8%A7%D8%AA%22%2C%22short_name%22%3A%22%D8%AD%D8%B3%D8%A7%D8%A8%20%D8%A7%D9%84%D9%83%D9%85%D9%8A%D8%A7%D8%AA%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%230f172a%22%2C%22theme_color%22%3A%22%231e3a8a%22%7D">
+
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --primary-light: #3b82f6;
+            --accent: #f59e0b;
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-input: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #475569;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding-bottom: 20px;
+        }
+
+        .shortcut-banner {
+            background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+            color: white;
+            padding: 14px 16px;
+            margin: 10px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            border: 1px solid var(--accent);
+        }
+
+        .shortcut-banner p {
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .screen {
+            display: none;
+            padding: 15px;
+            max-width: 100%;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        header {
+            background-color: var(--bg-card);
+            padding: 12px 15px;
+            border-bottom: 2px solid var(--primary-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        .header-title {
+            font-size: 1rem;
+            font-weight: bold;
+            color: var(--accent);
+        }
+
+        .btn {
+            background-color: var(--primary-light);
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn:active {
+            transform: scale(0.96);
+        }
+
+        .btn-danger { background-color: var(--danger); }
+        .btn-success { background-color: var(--success); }
+        .btn-accent { background-color: var(--accent); color: #000; }
+
+        .project-input-card {
+            background: var(--bg-card);
+            padding: 18px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        input, select {
+            background-color: var(--bg-input);
+            border: 1px solid var(--border);
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 1rem;
+            width: 100%;
+        }
+
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 15px;
+        }
+
+        .project-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .project-card h3 {
+            color: var(--accent);
+            margin-bottom: 6px;
+        }
+
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        .module-card {
+            background-color: var(--bg-card);
+            border-radius: 12px;
+            padding: 16px 10px;
+            text-align: center;
+            cursor: pointer;
+            border: 1px solid var(--border);
+        }
+
+        .module-card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 4px;
+        }
+
+        .section-block {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 15px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .section-header input {
+            font-weight: bold;
+            color: var(--accent);
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+            min-width: 500px;
+        }
+
+        th, td {
+            border: 1px solid var(--border);
+            padding: 8px 4px;
+            text-align: center;
+        }
+
+        th {
+            background-color: var(--primary);
+            color: white;
+            font-size: 0.85rem;
+        }
+
+        td input {
+            padding: 8px 4px;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .total-box {
+            background-color: var(--primary);
+            color: white;
+            padding: 14px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-top: 15px;
+            position: sticky;
+            bottom: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+    </style>
+</head>
+<body>
+
+    <header id="app-header" style="display: none;">
+        <div>
+            <span id="current-project-title" class="header-title">المشروع</span>
+            <span id="current-screen-title" style="color: var(--text-muted); font-size: 0.85rem;">| الشاشة</span>
+        </div>
+        <div>
+            <button class="btn" id="btn-back" onclick="navigateBack()">رجوع ↩</button>
+            <button class="btn btn-success" onclick="saveData()">حفظ 💾</button>
+        </div>
+    </header>
+
+    <div id="screen-dashboard" class="screen active">
+        <h1 style="text-align: center; margin-bottom: 10px; color: var(--accent); font-size: 1.4rem;">🏗️ تطبيق حساب الكميات الإنشائية</h1>
+        
+        <!-- PWA Instructions Banner -->
+        <div class="shortcut-banner" id="pwa-guide">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <strong style="color: var(--accent); font-size: 1rem;">📲 طريقة التثبيت كاختصار تطبيق:</strong>
+                <button onclick="document.getElementById('pwa-guide').style.display='none'" style="background:none; border:none; color:white; font-weight:bold; cursor:pointer; font-size: 1.2rem;">✕</button>
+            </div>
+            <p>
+            1. اضغط على <b>النقاط الثلاث (⋮)</b> في أعلى اليسار/اليمين بمتصفح Chrome.<br>
+            2. ابحث عن خيار <b>"إضافة إلى الشاشة الرئيسية" (Add to Home Screen)</b> أو <b>"تثبيت التطبيق" (Install App)</b>.<br>
+            3. إذا لم تجده مباشرة، اضغط <b>"مشاركة..." (Share)</b> ثم اختر <b>"إضافة إلى الشاشة الرئيسية"</b>.
+            </p>
+        </div>
+
+        <div class="project-input-card">
+            <h3 style="font-size: 1.1rem;">إضافة مشروع جديد</h3>
+            <div class="form-group">
+                <input type="text" id="new-project-name" placeholder="أدخل اسم المشروع (مثال: فيلا الأمل)...">
+                <button class="btn btn-accent" onclick="createNewProject()" style="justify-content: center;">+ إنشاء مشروع</button>
+            </div>
+        </div>
+
+        <h3 style="margin-bottom: 10px; font-size: 1.1rem;">المشاريع الحالية:</h3>
+        <div class="projects-grid" id="projects-list"></div>
+    </div>
+
+    <div id="screen-project-menu" class="screen">
+        <h3 style="margin-bottom: 15px; color: var(--accent);">اختر البند لحساب الكميات:</h3>
+        <div class="modules-grid">
+            <div class="module-card" onclick="openModule('white_concrete', 'الخرسانة البيضاء (النظافة)')">
+                <h3>🟩 الخرسانة البيضاء</h3>
+                <p style="color: var(--text-muted); font-size:0.75rem;">جدول واحد متصل</p>
+            </div>
+            <div class="module-card" onclick="openModule('footings', 'القواعد المسلحة')">
+                <h3>🔲 القواعد المسلحة</h3>
+                <p style="color: var(--text-muted); font-size:0.75rem;">جدول واحد متصل</p>
+            </div>
+            <div class="module-card" onclick="openModule('beams', 'الأبيام / الميدات')">
+                <h3>📏 الأبيام والميدات</h3>
+                <p style="color: var(--text-muted); font-size:0.75rem;">جدول واحد متصل</p>
+            </div>
+            <div class="module-card" onclick="openModule('columns', 'الأعمدة الخرسانية')">
+                <h3>🏛️ الأعمدة</h3>
+                <p style="color: var(--text-muted); font-size:0.75rem;">3 جداول (أرضي - أول - ملحق)</p>
+            </div>
+            <div class="module-card" onclick="openModule('slabs', 'البلاطات والأسقف')">
+                <h3>🏢 البلاطات (الأسقف)</h3>
+                <p style="color: var(--text-muted); font-size:0.75rem;">جدول واحد متصل</p>
+            </div>
+            <div class="module-card" onclick="openModule('walls', 'الحوائط')">
+                <h3>🧱 الحوائط</h3>
+                <p style="color: var(--text-muted); font-size:0.75rem;">جدول واحد متصل (م²)</p>
+            </div>
+            <div class="module-card" onclick="openModule('plaster', 'جدول البياض / المحارة')">
+                <h3>🖌️ البياض (المحارة)</h3>
+                <p style="color: var(--text-muted); font-size:0.75rem;">جدول واحد متصل (م²)</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="screen-calc-module" class="screen">
+        <div id="sections-container"></div>
+
+        <div class="total-box">
+            <span id="unit-label-title" style="font-size:0.9rem;">الإجمالي:</span>
+            <span id="grand-total-val" style="color: var(--accent);">0.00</span>
+        </div>
+    </div>
+
+    <script>
+        let projects = JSON.parse(localStorage.getItem('app_projects')) || {};
+        let currentProjectId = null;
+        let currentModuleKey = null;
+
+        const modulesConfig = {
+            white_concrete: { unit: 'm³', label: 'الخرسانة البيضاء (النظافة)', multiTables: false, isAreaMode: false, isPlaster: false },
+            footings: { unit: 'm³', label: 'القواعد المسلحة', multiTables: false, isAreaMode: false, isPlaster: false },
+            beams: { unit: 'm³', label: 'الأبيام / الميدات', multiTables: false, isAreaMode: false, isPlaster: false },
+            columns: { unit: 'm³', label: 'الأعمدة', multiTables: true, isAreaMode: false, isPlaster: false },
+            slabs: { unit: 'm³', label: 'البلاطات (الأسقف)', multiTables: false, isAreaMode: false, isPlaster: false },
+            walls: { unit: 'm²', label: 'الحوائط', multiTables: false, isAreaMode: true, isPlaster: false },
+            plaster: { unit: 'm²', label: 'البياض / المحارة', multiTables: false, isAreaMode: false, isPlaster: true }
+        };
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+
+            const header = document.getElementById('app-header');
+            if (screenId === 'screen-dashboard') {
+                header.style.display = 'none';
+            } else {
+                header.style.display = 'flex';
+            }
+        }
+
+        function navigateBack() {
+            const currentScreen = document.querySelector('.screen.active').id;
+            if (currentScreen === 'screen-calc-module') {
+                showScreen('screen-project-menu');
+                document.getElementById('current-screen-title').innerText = '| قائمة البنود';
+            } else if (currentScreen === 'screen-project-menu') {
+                showScreen('screen-dashboard');
+                currentProjectId = null;
+            }
+        }
+
+        function createNewProject() {
+            const nameInput = document.getElementById('new-project-name');
+            const name = nameInput.value.trim();
+            if (!name) return alert('يرجى إدخال اسم المشروع أولاً!');
+
+            const id = 'proj_' + Date.now();
+            projects[id] = { id: id, name: name, data: {} };
+
+            initProjectData(projects[id]);
+
+            saveData();
+            nameInput.value = '';
+            renderProjectsList();
+        }
+
+        function initProjectData(projectObj) {
+            if (!projectObj.data) projectObj.data = {};
+            
+            Object.keys(modulesConfig).forEach(mod => {
+                if (!projectObj.data[mod]) {
+                    if (modulesConfig[mod].multiTables) {
+                        projectObj.data[mod] = [
+                            { title: 'جدول أعمدة الدور الأرضي', rows: createDefaultRows(5) },
+                            { title: 'جدول أعمدة الدور الأول', rows: createDefaultRows(5) },
+                            { title: 'جدول أعمدة السطح / الملحق', rows: createDefaultRows(5) }
+                        ];
+                    } else {
+                        projectObj.data[mod] = [
+                            { title: `جدول ${modulesConfig[mod].label}`, rows: createDefaultRows(10) }
+                        ];
+                    }
+                }
+            });
+        }
+
+        function createDefaultRows(count) {
+            const rows = [];
+            for (let i = 1; i <= count; i++) {
+                rows.push({ name: '', count: 1, length: 0, width: 0, height: 0, deduct: 0 });
+            }
+            return rows;
+        }
+
+        function renderProjectsList() {
+            const container = document.getElementById('projects-list');
+            container.innerHTML = '';
+
+            Object.values(projects).forEach(proj => {
+                const card = document.createElement('div');
+                card.className = 'project-card';
+                card.innerHTML = `
+                    <h3>📌 ${proj.name}</h3>
+                    <p style="color: var(--text-muted); font-size:0.8rem;">انقر للفتح وإدارة الكميات</p>
+                    <button class="btn btn-danger" style="position:absolute; left:10px; top:10px; padding:3px 6px; font-size:0.75rem;" onclick="deleteProject(event, '${proj.id}')">حذف 🗑️</button>
+                `;
+                card.onclick = (e) => {
+                    if(e.target.tagName !== 'BUTTON') openProject(proj.id);
+                };
+                container.appendChild(card);
+            });
+        }
+
+        function deleteProject(e, id) {
+            e.stopPropagation();
+            if (confirm('هل أنت تأكد من حذف هذا المشروع بالكامل؟')) {
+                delete projects[id];
+                saveData();
+                renderProjectsList();
+            }
+        }
+
+        function openProject(id) {
+            currentProjectId = id;
+            if (!projects[id]) return;
+            initProjectData(projects[id]);
+            document.getElementById('current-project-title').innerText = projects[id].name;
+            document.getElementById('current-screen-title').innerText = '| قائمة البنود';
+            showScreen('screen-project-menu');
+        }
+
+        function openModule(moduleKey, moduleLabel) {
+            currentModuleKey = moduleKey;
+            initProjectData(projects[currentProjectId]);
+
+            document.getElementById('current-screen-title').innerText = `| ${moduleLabel}`;
+            renderSections();
+            showScreen('screen-calc-module');
+        }
+
+        function getActiveSectionsData() {
+            const proj = projects[currentProjectId];
+            return proj.data[currentModuleKey];
+        }
+
+        function renderSections() {
+            const container = document.getElementById('sections-container');
+            container.innerHTML = '';
+            const sections = getActiveSectionsData();
+            const config = modulesConfig[currentModuleKey];
+
+            sections.forEach((sec, sIdx) => {
+                const block = document.createElement('div');
+                block.className = 'section-block';
+
+                let tableHeaders = '';
+                if (config.isPlaster) {
+                    tableHeaders = `<th>العنصر</th><th>العدد</th><th>الطول</th><th>الارتفاع</th><th>الخصم</th><th>المساحة</th>`;
+                } else if (config.isAreaMode) {
+                    tableHeaders = `<th>العنصر</th><th>العدد</th><th>الطول</th><th>العرض</th><th>المساحة (m²)</th>`;
+                } else {
+                    tableHeaders = `<th>العنصر</th><th>العدد</th><th>الطول</th><th>العرض</th><th>الارتفاع</th><th>الحجم (m³)</th>`;
+                }
+
+                let rowsHtml = '';
+                sec.rows.forEach((r, rIdx) => {
+                    const rowTotal = calculateRowTotal(r, config);
+                    
+                    if (config.isPlaster) {
+                        rowsHtml += `
+                            <tr>
+                                <td><input type="text" value="${r.name || ''}" placeholder="عنصر ${rIdx+1}" onchange="updateCell(${sIdx}, ${rIdx}, 'name', this.value)"></td>
+                                <td><input type="number" value="${r.count || 1}" onchange="updateCell(${sIdx}, ${rIdx}, 'count', this.value)"></td>
+                                <td><input type="number" step="0.01" value="${r.length || 0}" onchange="updateCell(${sIdx}, ${rIdx}, 'length', this.value)"></td>
+                                <td><input type="number" step="0.01" value="${r.height || 0}" onchange="updateCell(${sIdx}, ${rIdx}, 'height', this.value)"></td>
+                                <td><input type="number" step="0.01" value="${r.deduct || 0}" onchange="updateCell(${sIdx}, ${rIdx}, 'deduct', this.value)"></td>
+                                <td style="font-weight:bold; color:var(--accent);" id="total-${sIdx}-${rIdx}">${rowTotal.toFixed(2)}</td>
+                            </tr>
+                        `;
+                    } else if (config.isAreaMode) {
+                        rowsHtml += `
+                            <tr>
+                                <td><input type="text" value="${r.name || ''}" placeholder="عنصر ${rIdx+1}" onchange="updateCell(${sIdx}, ${rIdx}, 'name', this.value)"></td>
+                                <td><input type="number" value="${r.count || 1}" onchange="updateCell(${sIdx}, ${rIdx}, 'count', this.value)"></td>
+                                <td><input type="number" step="0.01" value="${r.length || 0}" onchange="updateCell(${sIdx}, ${rIdx}, 'length', this.value)"></td>
+                                <td><input type="number" step="0.01" value="${r.width || 0}" onchange="updateCell(${sIdx}, ${rIdx}, 'width', this.value)"></td>
+                                <td style="font-weight:bold; color:var(--accent);" id="total-${sIdx}-${rIdx}">${rowTotal.toFixed(2)}</td>
+                            </tr>
+                        `;
+                    } else {
+                        rowsHtml += `
+                            <tr>
+                                <td><input type="text" value="${r.name || ''}" placeholder="عنصر ${rIdx+1}" onchange="updateCell(${sIdx}, ${rIdx}, 'name', this.value)"></td>
+                                <td><input type="number" value="${r.count || 1}" onchange="updateCell(${sIdx}, ${rIdx}, 'count', this.value)"></td>
+                                <td><input type="number" step="0.01" value="${r.length || 0}" onchange="updateCell(${sIdx}, ${rIdx}, 'length', this.value)"></td>
+                                <td><input type="number" step="0.01" value="${r.width || 0}" onchange="updateCell(${sIdx}, ${rIdx}, 'width', this.value)"></td>
+                                <td><input type="number" step="0.01" value="${r.height || 0}" onchange="updateCell(${sIdx}, ${rIdx}, 'height', this.value)"></td>
+                                <td style="font-weight:bold; color:var(--accent);" id="total-${sIdx}-${rIdx}">${rowTotal.toFixed(2)}</td>
+                            </tr>
+                        `;
+                    }
+                });
+
+                block.innerHTML = `
+                    <div class="section-header">
+                        <span>📊</span>
+                        <input type="text" value="${sec.title}" onchange="updateSectionTitle(${sIdx}, this.value)" placeholder="اسم الجدول...">
+                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>${tableHeaders}</tr>
+                            </thead>
+                            <tbody>
+                                ${rowsHtml}
+                            </tbody>
+                        </table>
+                    </div>
+                    <button class="btn" style="padding: 4px 10px; font-size: 0.8rem;" onclick="addRowToSection(${sIdx})">+ إضافة صف جديد</button>
+                `;
+                container.appendChild(block);
+            });
+
+            calculateGrandTotal();
+        }
+
+        function calculateRowTotal(r, config) {
+            const count = parseFloat(r.count) || 0;
+            const length = parseFloat(r.length) || 0;
+
+            if (config.isPlaster) {
+                const height = parseFloat(r.height) || 0;
+                const deduct = parseFloat(r.deduct) || 0;
+                const total = (count * length * height) - deduct;
+                return total > 0 ? total : 0;
+            } else if (config.isAreaMode) {
+                const width = parseFloat(r.width) || 0;
+                return count * length * width;
+            } else {
+                const width = parseFloat(r.width) || 0;
+                const height = parseFloat(r.height) || 0;
+                return count * length * width * height;
+            }
+        }
+
+        function updateCell(sIdx, rIdx, field, val) {
+            const sections = getActiveSectionsData();
+            sections[sIdx].rows[rIdx][field] = val;
+            
+            const config = modulesConfig[currentModuleKey];
+            const rowTotal = calculateRowTotal(sections[sIdx].rows[rIdx], config);
+            
+            document.getElementById(`total-${sIdx}-${rIdx}`).innerText = rowTotal.toFixed(2);
+            calculateGrandTotal();
+        }
+
+        function updateSectionTitle(sIdx, val) {
+            const sections = getActiveSectionsData();
+            sections[sIdx].title = val;
+        }
+
+        function addRowToSection(sIdx) {
+            const sections = getActiveSectionsData();
+            sections[sIdx].rows.push({ name: '', count: 1, length: 0, width: 0, height: 0, deduct: 0 });
+            renderSections();
+        }
+
+        function calculateGrandTotal() {
+            const sections = getActiveSectionsData();
+            const config = modulesConfig[currentModuleKey];
+            let grandTotal = 0;
+
+            sections.forEach(sec => {
+                sec.rows.forEach(r => {
+                    grandTotal += calculateRowTotal(r, config);
+                });
+            });
+
+            const unit = config.unit;
+            document.getElementById('unit-label-title').innerText = `إجمالي ${config.label}:`;
+            document.getElementById('grand-total-val').innerText = `${grandTotal.toFixed(2)} ${unit}`;
+        }
+
+        function saveData() {
+            localStorage.setItem('app_projects', JSON.stringify(projects));
+            alert('تم حفظ البيانات بنجاح! 💾');
+        }
+
+        window.onload = () => {
+            renderProjectsList();
+        };
+    </script>
+</body>
+</html>
